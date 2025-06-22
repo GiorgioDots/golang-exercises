@@ -39,10 +39,12 @@ func ExtractJSON[T any](r *http.Request) (T, error) {
 	return value, nil
 }
 
-func BadRequest(w http.ResponseWriter, err error) {
-	RespondJSON(w, http.StatusBadRequest, map[string]string{
-		"error": err.Error(),
-	})
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func RespondError(w http.ResponseWriter, code int, err error) {
+	RespondJSON(w, code, ErrorResponse{Error: err.Error()})
 }
 
 func ParseIDParam(r *http.Request, param string) (int, error) {

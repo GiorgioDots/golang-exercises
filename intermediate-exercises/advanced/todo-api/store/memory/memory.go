@@ -36,11 +36,10 @@ func (s *InMemoryTodoStore) List() ([]models.Todo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	copy := append([]models.Todo(nil), s.todos...)
-	if copy == nil {
-		copy = []models.Todo{}
-	}
-	return deepCopyTodos(copy), nil
+	copySlice := make([]models.Todo, len(s.todos))
+	copy(copySlice, s.todos)
+
+	return copySlice, nil
 }
 
 func (s *InMemoryTodoStore) GetByID(id int) (models.Todo, error) {
