@@ -64,7 +64,7 @@ func (h *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err)
 		return
 	}
-	RespondMessage(w, http.StatusCreated, "Todo updated")
+	RespondMessage(w, http.StatusOK, "Todo updated")
 }
 
 func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -78,5 +78,5 @@ func (h *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err)
 		return
 	}
-	RespondMessage(w, http.StatusCreated, "Todo Deleted")
+	RespondMessage(w, http.StatusNoContent, "Todo Deleted")
 }

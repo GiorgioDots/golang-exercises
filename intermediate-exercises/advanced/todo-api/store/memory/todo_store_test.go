@@ -1,52 +1,91 @@
-package memory_test
+package memory
 
 import (
-	"bytes"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/giorgiodots/todo-go-api/handlers"
 	"github.com/giorgiodots/todo-go-api/models"
-	"github.com/giorgiodots/todo-go-api/store/memory"
 )
 
-func TestCreateAndListTodos(t *testing.T) {
-	store := memory.NewInMemoryStore()
-	handler := handlers.NewTodoHandler(store)
+func TestAddAndListTodos(t *testing.T) {
+	store := NewInMemoryStore()
 
-	text := "Buy milk"
+	text := "Test todo"
 	done := false
-
-	// Build create request
-	createReq := models.CreateTodoRequest{
+	todo, err := store.Add(models.CreateTodoRequest{
 		Text: &text,
 		Done: &done,
-	}
-	body, _ := json.Marshal(createReq)
-
-	req := httptest.NewRequest(http.MethodPost, "/todos", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	handler.Create(w, req)
-
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d", w.Code)
+	})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 
-	// List the todos
-	req2 := httptest.NewRequest(http.MethodGet, "/todos", nil)
-	w2 := httptest.NewRecorder()
-	handler.List(w2, req2)
-
-	var todos []models.Todo
-	if err := json.NewDecoder(w2.Body).Decode(&todos); err != nil {
-		t.Fatalf("could not decode response: %v", err)
+	todos, err := store.List()
+	if err != nil {
+		t.Fatalf("Unexpected error in list method %v", err)
+	}
+	if len(todos) != 1 {
+		t.Fatalf("expected 1 todo, got %d", len(todos))
 	}
 
-	if len(todos) != 1 || todos[0].Text != "Buy milk" {
-		t.Errorf("unexpected todo list: %+v", todos)
+	if todos[0].ID != todo.ID {
+		t.Errorf("expected ID %d, got %d", todo.ID, todos[0].ID)
+	}
+}
+
+func TestGetTodoByID(t *testing.T) {
+	store := NewInMemoryStore()
+
+	text := "Find me"
+	done := true
+	todo, _ := store.Add(models.CreateTodoRequest{Text: &text, Done: &done})
+
+	found, err := store.GetByID(todo.ID)
+	if err != nil {
+		t.Fatalf("expected to find todo, got error %v", err)
+	}
+
+	if found.Text != text {
+		t.Errorf("expected text %q, got %v", text, found.Text)
+	}
+}
+
+func TestUpdateTodo(t *testing.T) {
+	store := NewInMemoryStore()
+
+	text := "Original"
+	done := false
+	todo, _ := store.Add(models.CreateTodoRequest{Text: &text, Done: &done})
+
+	newText := "Updated"
+	newDone := true
+	err := store.Update(todo.ID, models.UpdateTodoRequest{
+		Text: &newText,
+		Done: &newDone,
+	})
+	if err != nil {
+		t.Fatalf("update failed: %v", err)
+	}
+
+	updated, _ := store.GetByID(todo.ID)
+	if updated.Text != newText || updated.Done != newDone {
+		t.Errorf("update failed: got %+v", updated)
+	}
+}
+
+func TestDeleteTodo(t *testing.T) {
+	store := NewInMemoryStore()
+
+	text := "To be deleted"
+	done := false
+	todo, _ := store.Add(models.CreateTodoRequest{Text: &text, Done: &done})
+
+	err := store.Delete(todo.ID)
+	if err != nil {
+		t.Fatalf("delete failed: %v", err)
+	}
+
+	_, err = store.GetByID(todo.ID)
+	if err == nil {
+		t.Fatalf("expected error when getting deleted todo")
 	}
 }

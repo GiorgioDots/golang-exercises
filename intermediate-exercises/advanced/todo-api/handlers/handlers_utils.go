@@ -48,7 +48,8 @@ func RespondError(w http.ResponseWriter, code int, err error) {
 }
 
 func ParseIDParam(r *http.Request, param string) (int, error) {
-	return strconv.Atoi(chi.URLParam(r, param))
+	p := chi.URLParam(r, param)
+	return strconv.Atoi(p)
 }
 
 func RespondMessage(w http.ResponseWriter, status int, message string) {
